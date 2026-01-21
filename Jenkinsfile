@@ -19,7 +19,7 @@ pipeline {
             steps {
                 // Explicitly checkout main branch
                 git branch: 'main',
-                    url: ''https://github.com/zahmadi57/terraform-CICD-project.git'
+                    url: 'https://github.com/zahmadi57/terraform-CICD-project.git'
             }
         }
  
