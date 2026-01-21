@@ -10,29 +10,42 @@ pipeline {
     }
 
     environment {
-        AWS_ACCESS_KEY_ID     = credentials('aws-access-key')
-        AWS_SECRET_ACCESS_KEY = credentials('aws-secret-key')
-        AWS_DEFAULT_REGION    = 'us-east-1'
-        TERRAFORM_BIN         = '/usr/bin/terraform'
+        AWS_DEFAULT_REGION = 'us-east-1'
+        TERRAFORM_BIN      = '/usr/bin/terraform'
     }
 
     stages {
 
         stage('Terraform Init') {
             steps {
-                sh "${TERRAFORM_BIN} init"
+                withCredentials([
+                    string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    sh "${TERRAFORM_BIN} init"
+                }
             }
         }
 
         stage('Terraform Validate') {
             steps {
-                sh "${TERRAFORM_BIN} validate"
+                withCredentials([
+                    string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    sh "${TERRAFORM_BIN} validate"
+                }
             }
         }
 
         stage('Terraform Plan') {
             steps {
-                sh "${TERRAFORM_BIN} plan -var=\"bucket_name=${BUCKET_NAME}\""
+                withCredentials([
+                    string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    sh "${TERRAFORM_BIN} plan -var=\"bucket_name=${BUCKET_NAME}\""
+                }
             }
         }
 
@@ -44,7 +57,12 @@ pipeline {
 
         stage('Terraform Apply') {
             steps {
-                sh "${TERRAFORM_BIN} apply -auto-approve -var=\"bucket_name=${BUCKET_NAME}\""
+                withCredentials([
+                    string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
+                    sh "${TERRAFORM_BIN} apply -auto-approve -var=\"bucket_name=${BUCKET_NAME}\""
+                }
             }
         }
     }
