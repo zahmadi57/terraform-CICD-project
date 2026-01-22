@@ -1,11 +1,12 @@
 pipeline {
     agent any
 
+    // Optional: allow user to enter bucket name
     parameters {
         string(
             name: 'BUCKET_NAME',
-            defaultValue: 'jenkins-terraform-demo',
-            description: 'Name of the S3 bucket'
+            defaultValue: 'jenkins-terraform-demo-${env.BUILD_NUMBER}',
+            description: 'Name of the S3 bucket (must be globally unique)'
         )
     }
 
@@ -16,11 +17,18 @@ pipeline {
 
     stages {
 
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main',
+                    url: 'https://github.com/zahmadi57/terraform-CICD-project.git'
+            }
+        }
+
         stage('Terraform Init') {
             steps {
                 withCredentials([
-                    string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'),
-                    string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
+                    string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'aws-secret-key', variable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
                     sh "${TERRAFORM_BIN} init"
                 }
@@ -30,8 +38,8 @@ pipeline {
         stage('Terraform Validate') {
             steps {
                 withCredentials([
-                    string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'),
-                    string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
+                    string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'aws-secret-key', variable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
                     sh "${TERRAFORM_BIN} validate"
                 }
@@ -41,10 +49,10 @@ pipeline {
         stage('Terraform Plan') {
             steps {
                 withCredentials([
-                    string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'),
-                    string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
+                    string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'aws-secret-key', variable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
-                    sh "${TERRAFORM_BIN} plan -var=\"bucket_name=${BUCKET_NAME}\""
+                    sh "${TERRAFORM_BIN} plan -var=\"bucket_name=${params.BUCKET_NAME}\""
                 }
             }
         }
@@ -58,10 +66,10 @@ pipeline {
         stage('Terraform Apply') {
             steps {
                 withCredentials([
-                    string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'),
-                    string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
+                    string(credentialsId: 'aws-access-key', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'aws-secret-key', variable: 'AWS_SECRET_ACCESS_KEY')
                 ]) {
-                    sh "${TERRAFORM_BIN} apply -auto-approve -var=\"bucket_name=${BUCKET_NAME}\""
+                    sh "${TERRAFORM_BIN} apply -auto-approve -var=\"bucket_name=${params.BUCKET_NAME}\""
                 }
             }
         }
@@ -69,7 +77,7 @@ pipeline {
 
     post {
         success {
-            echo 'Terraform applied successfully!'
+            echo "Terraform applied successfully! Bucket: ${params.BUCKET_NAME}"
         }
         failure {
             echo 'Pipeline failed. Check logs for details.'
