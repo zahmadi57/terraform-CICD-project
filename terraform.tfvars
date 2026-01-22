@@ -1,1 +1,1 @@
-bucket_name = "jenkins-terraform-demo-zia"
+bucket_name = "jenkins-terraform-demo-zaid57"
